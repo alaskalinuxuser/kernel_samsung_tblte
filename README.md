@@ -5,7 +5,8 @@ Edited for non touchwiz roms by the AlaskaLinuxUser. https://thealaskalinuxuser.
 
 Change Log:
 20161028
-+Added FIOPS I/O scheduler.
++ Added FIOPS I/O scheduler.
++ Added ZEN I/O scheduler.
 
 20161027
 +Overclocked the CPU by 39 MHz, from 2649 MHz to 2688 MHz, no increase in voltage.
