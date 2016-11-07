@@ -42,9 +42,6 @@ static void input_booster_change_dvfs_tsp_work(struct work_struct *work)
 #endif
 		booster->dvfs_freq = MIN_TOUCH_LIMIT_SECOND;
 		break;
-	case DVFS_STAGE_NINTH:
-		retval = set_freq_limit(DVFS_TOUCH_ID,
-				MIN_TOUCH_LIMIT);
 #if INPUT_BIMC_MINLOCK
 		pr_info("%s: bimc clk set: %d\n",
 				__func__, INPUT_BIMC_LIMIT);
@@ -81,10 +78,6 @@ static void input_booster_set_dvfs_tsp_lock(struct input_booster *booster, int o
 			case DVFS_STAGE_PENTA:
 				schedule_delayed_work(&booster->work_dvfs_off,
 					msecs_to_jiffies(INPUT_BOOSTER_OFF_TIME_TSP));
-				break;
-			case DVFS_STAGE_NINTH:
-				schedule_delayed_work(&booster->work_dvfs_off,
-					msecs_to_jiffies(INPUT_BOOSTER_HIGH_OFF_TIME_TSP));
 				break;
 			}
 		}
@@ -138,10 +131,6 @@ static void input_booster_set_dvfs_tsp_lock(struct input_booster *booster, int o
 				schedule_delayed_work(&booster->work_dvfs_chg,
 					msecs_to_jiffies(INPUT_BOOSTER_CHG_TIME_TSP));
 				break;
-			case DVFS_STAGE_NINTH:
-				if (booster->dvfs_freq != MIN_TOUCH_HIGH_LIMIT) {
-					retval = set_freq_limit(DVFS_TOUCH_ID,
-							MIN_TOUCH_HIGH_LIMIT);
 #if INPUT_BIMC_MINLOCK
 					pr_info("%s: bimc clk set: %d\n",
 							__func__, INPUT_BIMC_HIGH_LIMIT);
@@ -151,7 +140,6 @@ static void input_booster_set_dvfs_tsp_lock(struct input_booster *booster, int o
 				}
 				schedule_delayed_work(&booster->work_dvfs_chg,
 					msecs_to_jiffies(INPUT_BOOSTER_HIGH_CHG_TIME_TSP));
-				break;
 
 			}
 

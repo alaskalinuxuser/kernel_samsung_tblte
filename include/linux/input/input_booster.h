@@ -9,13 +9,14 @@ enum input_booster_id {
 	INPUT_BOOSTER_ID_TKEY,
 	INPUT_BOOSTER_ID_WACOM,
 };
-
+/* I have purposely changed this file so dvfs input booster does not work.
+Be advised that you cannot use dvfs input booster on this kernel.
+Use CPU booster instead. WJH */
 #define DVFS_STAGE_NONE		1 << 0	// 0000 0000 0000 0001
 #define DVFS_STAGE_SINGLE	1 << 1	// 0000 0000 0000 0010
 #define DVFS_STAGE_DUAL		1 << 2	// 0000 0000 0000 0100
 #define DVFS_STAGE_TRIPLE	1 << 3	// 0000 0000 0000 1000
 #define DVFS_STAGE_PENTA	1 << 5	// 0000 0000 0010 0000
-#define DVFS_STAGE_NINTH	1 << 9	// 0000 0010 0000 0000
 
 /* Set DVFS STAGE for each model */
 /* TSP BOOSTER */
@@ -23,7 +24,7 @@ enum input_booster_id {
 	defined(CONFIG_SEC_KCCAT6_PROJECT) || defined(CONFIG_SEC_TBLTE_PROJECT)
 #define DVFS_TSP_STAGE		(DVFS_STAGE_NONE | DVFS_STAGE_SINGLE |\
 				DVFS_STAGE_DUAL | DVFS_STAGE_TRIPLE |\
-				DVFS_STAGE_PENTA | DVFS_STAGE_NINTH)
+				DVFS_STAGE_PENTA)
 #endif
 
 /* TKEY BOOSTER */
