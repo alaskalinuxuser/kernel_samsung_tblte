@@ -3,6 +3,12 @@ AKLU Kernel 3.10.40
 https://thealaskalinuxuser.wordpress.com
 
 Change Log:
+20161115
++ Added the Bioshock Governor.
++ Added the Lionheart Governor.
++ Added the Nightmare Governor.
++ Added the Darkness Governor.
+
 20161114
 + Added FIOPS I/O Scheduler
 + Added ZEN I/O Scheduler
