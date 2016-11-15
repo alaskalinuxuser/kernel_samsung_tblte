@@ -8,6 +8,9 @@ Change Log:
 + Added the Lionheart Governor.
 + Added the Nightmare Governor.
 + Added the Darkness Governor.
+- Removed FIOPS I/O Scheduler.
+- Removed ZEN I/O Scheduler.
+Removed extra I/O schedulers due to recurrance of the random reboots.
 
 20161114
 + Added FIOPS I/O Scheduler
