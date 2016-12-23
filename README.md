@@ -3,6 +3,9 @@ AKLU Kernel 3.10.40
 https://thealaskalinuxuser.wordpress.com
 
 Change Log:
+20161222
++ Added Intelliplug by Faux123!
+
 20161116
 + Overclocked GPU from 600 to 633 MHz
 + Overclocked CPU from 2649 to 2688 MHz
