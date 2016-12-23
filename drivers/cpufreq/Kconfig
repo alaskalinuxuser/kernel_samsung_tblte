@@ -127,34 +127,6 @@ config CPU_FREQ_GOV_PERFORMANCE
 
 	  If in doubt, say Y.
 
-config CPU_FREQ_GOV_BIOSHOCK
-	tristate "'bioshock' governor"
-	help
-	  The cpufreq governor Bioshock. WJH
-	  To compile this driver as a module, choose M here: the
-	  module will be called cpufreq_bioshock.
-
-config CPU_FREQ_GOV_LIONHEART
-	tristate "'lionheart' governor"
-	help
-	  The cpufreq governor Lionheart. WJH
-	  To compile this driver as a module, choose M here: the
-	  module will be called cpufreq_lionheart.
-
-config CPU_FREQ_GOV_NIGHTMARE
-	tristate "'nightmare' governor"
-	help
-	  The cpufreq governor Nightmare. WJH
-	  To compile this driver as a module, choose M here: the
-	  module will be called cpufreq_nightmare.
-
-config CPU_FREQ_GOV_DARKNESS
-	tristate "'darkness' governor"
-	help
-	  The cpufreq governor darkness. WJH
-	  To compile this driver as a module, choose M here: the
-	  module will be called cpufreq_darkness.
-
 config CPU_FREQ_GOV_POWERSAVE
 	tristate "'powersave' governor"
 	help

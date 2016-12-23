@@ -345,8 +345,12 @@ static void max77803_set_input_current(struct max77803_charger_data *charger,
 	}
 
 	set_current_reg = cur / charger->input_curr_limit_step;
-	if (charger->cable_type == POWER_SUPPLY_TYPE_BATTERY)
-		goto set_input_current;
+	if (charger->cable_type == POWER_SUPPLY_TYPE_BATTERY) {
+		if (charger->status != POWER_SUPPLY_STATUS_CHARGING)
+			goto set_input_current;
+		else
+			goto exit;
+	}
 
 	max77803_read_reg(charger->max77803->i2c,
 		set_reg, &reg_data);

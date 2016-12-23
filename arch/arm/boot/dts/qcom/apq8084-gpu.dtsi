@@ -25,9 +25,14 @@
 
 		qcom,initial-pwrlevel = <3>;
 
-		qcom,idle-timeout = <8>; //<HZ/12>
+		qcom,idle-timeout = <80>; // 80ms
 		qcom,strtstp-sleepwake;
-		qcom,clk-map = <0x00000006>; //KGSL_CLK_CORE | KGSL_CLK_IFACE
+
+		/*
+		 * Clocks = KGSL_CLK_CORE | KGSL_CLK_IFACE |
+		 * KGSL_CLK_RBBMTIMER
+		 */
+		qcom,clk-map = <0x00000086>;
 
 		qcom,pm-qos-active-latency = <501>;
 		qcom,pm-qos-wakeup-latency = <101>;
@@ -86,7 +91,7 @@
 
 			qcom,gpu-pwrlevel@0 {
 				reg = <0>;
-				qcom,gpu-freq = <633000000>;
+				qcom,gpu-freq = <600000000>;
 				qcom,bus-freq = <16>;
 				qcom,io-fraction = <33>;
 			};

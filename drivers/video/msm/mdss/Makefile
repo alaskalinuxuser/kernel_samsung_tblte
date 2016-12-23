@@ -54,8 +54,6 @@ obj-$(CONFIG_FB_MSM_QPIC_ILI_QVGA_PANEL) += qpic_panel_ili_qvga.o
 obj-$(CONFIG_FB_MSM_MDSS) += mdss_fb.o
 obj-$(CONFIG_COMPAT) += mdss_compat_utils.o
 
-obj-$(CONFIG_FB_MSM_MDSS_KCAL_CTRL) += mdss_mdp_kcal_ctrl.o
-
 ifeq ($(CONFIG_FB_MSM_MDSS_SAMSUNG),y)
 obj-$(CONFIG_FB_MSM_MDSS_FENCE_DBG) += xlog_fence.o
 obj-y += samsung/
@@ -66,3 +64,8 @@ obj-$(CONFIG_FB_MSM_MDSS_DSI_CTRL_STATUS) += dsi_status_v2.o
 else
 obj-$(CONFIG_FB_MSM_MDSS_DSI_CTRL_STATUS) += mdss_dsi_status.o
 endif
+
+obj-$(CONFIG_FB_MSM_MDSS_KCAL_CTRL) += mdss_mdp_kcal_ctrl.o
+
+
+obj-$(CONFIG_FB_MSM_MDSS) += mdss_livedisplay.o

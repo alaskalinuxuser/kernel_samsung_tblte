@@ -23,10 +23,15 @@
 #include <linux/err.h>
 
 #include "mdss_dsi.h"
+#include "mdss_livedisplay.h"
 
 #if defined(CONFIG_FB_MSM_MDSS_SAMSUNG)
 #include "mdss_debug.h"
 #include "samsung/ss_dsi_panel_common.h"
+
+extern struct mdss_panel_data *pdata_dsi0;
+extern struct mdss_panel_data *pdata_dsi1;
+extern struct work_struct  esd_irq_work;
 #endif
 
 #define DT_CMD_HDR 6
@@ -664,6 +669,10 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	struct mdss_dsi_ctrl_pdata *ctrl = NULL;
 	struct mdss_panel_info *pinfo;
 
+#if defined(CONFIG_FB_MSM_MDSS_SAMSUNG)
+	struct samsung_display_driver_data *vdd =
+		(struct samsung_display_driver_data *)pdata->panel_private;
+#endif
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
 		return -EINVAL;
@@ -675,6 +684,12 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 
 	pr_info("%s: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
 
+#if defined(CONFIG_FB_MSM_MDSS_SAMSUNG)
+	if (ctrl->ndx == DSI_CTRL_0)
+		pdata_dsi0 = &ctrl->panel_data;
+	else if (ctrl->ndx == DSI_CTRL_1)
+		pdata_dsi1 = &ctrl->panel_data;
+#endif
 	if (pinfo->dcs_cmd_by_left) {
 		if (ctrl->ndx != DSI_CTRL_LEFT) {
 			pr_err("%s : ctrl ndx (%d)\n",__func__,ctrl->ndx);
@@ -710,7 +725,17 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 			mdss_dsi_panel_cmds_send(ctrl, &ctrl->on_cmds);
 #endif
 
+	mdss_livedisplay_update(ctrl, MODE_UPDATE_ALL);
+	
 	end:
+
+#if defined(CONFIG_FB_MSM_MDSS_SAMSUNG)
+	if (pinfo->esd_check_enabled) {
+		vdd->esd_recovery.esd_irq_enable(true, true, (void *)vdd);
+		vdd->esd_recovery.is_enabled_esd_recovery = true;
+		pr_info("%s-: ndx=%d  esd_check_enabled as true  \n", __func__, ctrl->ndx);
+	}
+#endif
 		pinfo->blank_state = MDSS_PANEL_BLANK_UNBLANK;
 
 	pr_info("%s:-\n", __func__);
@@ -721,6 +746,11 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl = NULL;
 	struct mdss_panel_info *pinfo;
+
+#if defined(CONFIG_FB_MSM_MDSS_SAMSUNG)
+		struct samsung_display_driver_data *vdd =
+			(struct samsung_display_driver_data *)pdata->panel_private;
+#endif
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -733,6 +763,14 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 
 	pr_info("%s: ctrl=%p ndx=%d\n", __func__, ctrl, ctrl->ndx);
 
+#if defined(CONFIG_FB_MSM_MDSS_SAMSUNG)
+	if (pinfo->esd_check_enabled) {
+		vdd->esd_recovery.esd_irq_enable(false, true, (void *)vdd);
+		vdd->esd_recovery.is_enabled_esd_recovery = false;
+		cancel_work_sync(&esd_irq_work);
+        pr_info("%s-: ndx=%d  esd_check_enabled as false\n", __func__, ctrl->ndx);
+	}
+#endif
 	if (pinfo->dcs_cmd_by_left) {
 		if (ctrl->ndx != DSI_CTRL_LEFT) {
 			pr_err("%s : ndx(%d) return,,\n", __func__, ctrl->ndx);
@@ -834,7 +872,7 @@ static void mdss_dsi_parse_trigger(struct device_node *np, char *trigger,
 }
 
 
-static int mdss_dsi_parse_dcs_cmds(struct device_node *np,
+int mdss_dsi_parse_dcs_cmds(struct device_node *np,
 		struct dsi_panel_cmds *pcmds, char *cmd_key, char *link_key)
 {
 	const char *data;
@@ -1242,6 +1280,11 @@ static int mdss_dsi_parse_panel_features(struct device_node *np,
 	pr_info("%s: ulps feature %s\n", __func__,
 		(pinfo->ulps_feature_enabled ? "enabled" : "disabled"));
 
+	pinfo->esd_check_enabled = of_property_read_bool(np,
+		"qcom,esd-check-enabled");
+	pr_info("%s: esd feature : %s\n", __func__,
+		(pinfo->esd_check_enabled ? "enabled" : "disabled"));
+
 	return 0;
 }
 
@@ -1573,6 +1616,11 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->off_cmds,
 		"qcom,mdss-dsi-off-command", "qcom,mdss-dsi-off-command-state");
 
+	rc = of_property_read_u32(np, "qcom,mdss-dsi-panel-status-value", &tmp);
+	ctrl_pdata->status_value = (!rc ? tmp : 0);
+	ctrl_pdata->status_mode = ESD_MAX;
+	pr_err("%s: status_value %d\n", __func__, ctrl_pdata->status_value );
+
 	rc = mdss_dsi_parse_panel_features(np, ctrl_pdata);
 	if (rc) {
 		pr_err("%s: failed to parse panel features\n", __func__);
@@ -1582,6 +1630,8 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	mdss_dsi_parse_panel_horizintal_line_idle(np, ctrl_pdata);
 
 //	mdss_dsi_parse_dfps_config(np, ctrl_pdata);
+
+	mdss_livedisplay_parse_dt(np, pinfo);
 
 	return 0;
 

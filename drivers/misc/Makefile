@@ -71,16 +71,9 @@ obj-$(CONFIG_TI_DRV2667) += ti_drv2667.o
 obj-$(CONFIG_QPNP_MISC) += qpnp-misc.o
 obj-$(CONFIG_APQ8084_DOCKING_STATION)	+= apq8084_dock.o
 obj-y				+= qcom/
+obj-$(CONFIG_UID_CPUTIME) 	+= uid_cputime.o
 obj-$(CONFIG_TIMA_LOG)		+= tima_debug_log.o
 obj-$(CONFIG_DM_VERITY)		+= dmverity_query.o
 obj-$(CONFIG_SEC_MODEM) += modem_if/
 
 obj-y += dualwave/
-obj-$(CONFIG_HAPTIC_DRV2605)	+= drv2605.o
-obj-$(CONFIG_C55_CTRL) += c55_ctrl.o
-#obj-$(CONFIG_SENSORS_STM401) += stm401/
-obj-$(CONFIG_ALSA_TO_H2W) += alsa-to-h2w-headset.o
-obj-$(CONFIG_MMI_FACTORY) += mmi-factory.o
-obj-$(CONFIG_MMI_SAR) += mmi-sar.o
-#obj-$(CONFIG_CYPRESS_CAPSENSE_PROGRAMMING)	+= capsense_prog/
-obj-$(CONFIG_UID_CPUTIME) += uid_cputime.o

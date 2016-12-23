@@ -13,7 +13,6 @@ obj-$(CONFIG_DEBUG_FS) += perf_debug.o
 
 obj-$(CONFIG_SMP) += headsmp.o platsmp.o
 obj-$(CONFIG_HOTPLUG_CPU) += hotplug.o
-obj-$(CONFIG_INTELLI_PLUG) += intelli_plug.o
 
 obj-$(CONFIG_MSM_AVS_HW) += avs.o
 obj-$(CONFIG_CPU_V7) += idle-v7.o

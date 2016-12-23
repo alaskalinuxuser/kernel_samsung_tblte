@@ -199,6 +199,8 @@ struct lcd_panel_info {
 	u32 xres_pad;
 	/* Pad height */
 	u32 yres_pad;
+	u32 h_polarity;
+	u32 v_polarity;
 };
 
 
@@ -329,6 +331,8 @@ struct esd_recovery {
 };
 #endif
 
+struct mdss_livedisplay_ctx;
+
 struct mdss_panel_info {
 	u32 xres;
 	u32 yres;
@@ -369,6 +373,7 @@ struct mdss_panel_info {
 	int pwm_period;
 	bool dynamic_fps;
 	bool ulps_feature_enabled;
+	bool esd_check_enabled;
 	bool split_display;
 	char dfps_update;
 	int new_fps;
@@ -387,6 +392,7 @@ struct mdss_panel_info {
 	struct ion_handle *splash_ihdl;
 	int panel_power_state;
 	int blank_state;
+	bool is_split_display;
 
 	int dsi_on_status;
 
@@ -404,6 +410,8 @@ struct mdss_panel_info {
 	struct esd_recovery esd_recovery;
 	int panel_state;
 #endif
+
+	struct mdss_livedisplay_ctx *livedisplay;
 
 };
 
