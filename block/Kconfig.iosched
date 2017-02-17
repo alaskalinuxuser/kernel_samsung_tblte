@@ -23,6 +23,18 @@ config IOSCHED_TEST
 	  according to the test case and declare PASS/FAIL according to the
 	  requests completion error code.
 
+config IOSCHED_FIOPS
+	tristate "FIOPS I/O scheduler"
+	default y
+	---help---
+	  The FIOPS I/O scheduler. WJH
+
+config IOSCHED_ZEN
+	tristate "ZEN I/O scheduler"
+	default y
+	---help---
+	  The ZEN I/O scheduler. WJH
+
 config IOSCHED_DEADLINE
 	tristate "Deadline I/O scheduler"
 	default y
