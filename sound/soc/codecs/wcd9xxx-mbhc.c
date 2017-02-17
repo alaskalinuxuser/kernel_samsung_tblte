@@ -324,6 +324,11 @@ static bool __wcd9xxx_switch_micbias(struct wcd9xxx_mbhc *mbhc,
 			   0x04;
 		if (!override)
 			wcd9xxx_turn_onoff_override(mbhc, true);
+
+		snd_soc_update_bits(codec, WCD9XXX_A_MAD_ANA_CTRL,
+				    0x10, 0x00);
+		snd_soc_update_bits(codec, WCD9XXX_A_LDO_H_MODE_1,
+				    0x20, 0x00);
 		/* Adjust threshold if Mic Bias voltage changes */
 		if (d->micb_mv != VDDIO_MICBIAS_MV) {
 			cfilt_k_val = __wcd9xxx_resmgr_get_k_val(mbhc,
@@ -385,6 +390,11 @@ static bool __wcd9xxx_switch_micbias(struct wcd9xxx_mbhc *mbhc,
 		if ((!checkpolling || mbhc->polling_active) &&
 		    restartpolling)
 			wcd9xxx_pause_hs_polling(mbhc);
+
+			snd_soc_update_bits(codec, WCD9XXX_A_MAD_ANA_CTRL,
+					    0x10, 0x10);
+			snd_soc_update_bits(codec, WCD9XXX_A_LDO_H_MODE_1,
+					    0x20, 0x20);
 		/* Reprogram thresholds */
 		if (d->micb_mv != VDDIO_MICBIAS_MV) {
 			cfilt_k_val =
@@ -484,7 +494,7 @@ static s16 wcd9xxx_get_current_v(struct wcd9xxx_mbhc *mbhc,
 }
 
 void *wcd9xxx_mbhc_cal_btn_det_mp(
-			    struct wcd9xxx_mbhc_btn_detect_cfg *btn_det,
+			    const struct wcd9xxx_mbhc_btn_detect_cfg *btn_det,
 			    const enum wcd9xxx_mbhc_btn_det_mem mem)
 {
 	void *ret = &btn_det->_v_btn_low;

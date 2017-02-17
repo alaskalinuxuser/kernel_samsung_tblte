@@ -43,6 +43,7 @@ struct ss_vib {
 	int state;
 	int timeout;
 	int intensity;
+	int timevalue;
 
 	unsigned int vib_pwm_gpio;	/* gpio number for vibrator pwm */
 	unsigned int vib_en_gpio;	/* gpio number of vibrator enable */
@@ -128,22 +129,22 @@ int32_t vibe_pwm_onoff(u8 onoff)
 	return VIBRATION_SUCCESS;
 }
 
-static void max778xx_haptic_en(struct ss_vib *vib)
+static void max778xx_haptic_en(struct ss_vib *vib, bool onoff)
 {
 	switch (vib->chip_model) {
 #if defined(CONFIG_MOTOR_DRV_MAX77828)
 	case CHIP_MAX77828:
-		max77828_vibrator_en(vib->state);
+		max77828_vibrator_en(onoff);
 		break;
 #endif
 #if defined(CONFIG_MOTOR_DRV_MAX77804K)
 	case CHIP_MAX77804K:
-		max77804k_vibrator_en(vib->state);
+		max77804k_vibrator_en(onoff);
 		break;
 #endif
 #if defined(CONFIG_MOTOR_DRV_MAX77843)
 	case CHIP_MAX77843:
-		max77843_vibrator_en(vib->state);
+		max77843_vibrator_en(onoff);
 		break;
 #endif
 	default:
@@ -156,11 +157,6 @@ static void set_vibrator(struct ss_vib *vib)
 	int rc = 0;
 	pr_info("[VIB]: %s, value[%d]\n", __func__, vib->state);
 	if (vib->state) {
-
-		if (vib->power_onoff)
-			vib->power_onoff(1);
-		if (vib->flag_en_gpio)
-			gpio_set_value(vib->vib_en_gpio, VIBRATION_ON);
 		rc = gpio_tlmm_config(GPIO_CFG(vib->vib_pwm_gpio,\
 				3, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, \
 				GPIO_CFG_2MA),GPIO_CFG_ENABLE);
@@ -168,6 +164,11 @@ static void set_vibrator(struct ss_vib *vib)
 			pr_err("%s: vib_pwm_gpio error : %d\n", __func__, rc);
 		}
 		gpio_set_value(vib->vib_pwm_gpio, VIBRATION_ON);
+		if (vib->power_onoff)
+			vib->power_onoff(1);
+		if (vib->flag_en_gpio)
+			gpio_set_value(vib->vib_en_gpio, VIBRATION_ON);
+		hrtimer_start(&vib->vib_timer, ktime_set(vib->timevalue / 1000, (vib->timevalue % 1000) * 1000000),HRTIMER_MODE_REL);
 	} else {
 		rc = gpio_tlmm_config(GPIO_CFG(vib->vib_pwm_gpio,\
 				0, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, \
@@ -181,8 +182,6 @@ static void set_vibrator(struct ss_vib *vib)
 		if (vib->power_onoff)
 			vib->power_onoff(0);
 	}
-
-	max778xx_haptic_en(vib);
 }
 
 static void vibrator_enable(struct timed_output_dev *dev, int value)
@@ -195,16 +194,11 @@ static void vibrator_enable(struct timed_output_dev *dev, int value)
 	if (value == 0) {
 		pr_info("[VIB]: OFF\n");
 		vib->state = 0;
+		vib->timevalue = 0;
 	} else {
-		pr_info("[VIB]: ON, Duration : %d msec\n", value);
+		pr_info("[VIB]: ON, Duration : %d msec, intensity : %d\n", value, vib->intensity);
 		vib->state = 1;
-
-		if (value == 0x7fffffff){
-			pr_info("[VIB]: No Use Timer %d\n", value);
-		} else {
-			value = (value > vib->timeout ?	vib->timeout : value);
-			hrtimer_start(&vib->vib_timer, ktime_set(value / 1000, (value % 1000) * 1000000),HRTIMER_MODE_REL);
-		}
+		vib->timevalue = value;
 	}
 	mutex_unlock(&vib->lock);
 	queue_work(vib->queue, &vib->work);
@@ -250,12 +244,23 @@ static int ss_vibrator_suspend(struct device *dev)
 	/* turn-off vibrator */
 	vib->state = 0;
 	set_vibrator(vib);
+	max778xx_haptic_en(vib, false);
+
+	return 0;
+}
+
+static int ss_vibrator_resume(struct device *dev)
+{
+	struct ss_vib *vib = dev_get_drvdata(dev);
+
+	pr_info("[VIB]: %s\n", __func__);
+	max778xx_haptic_en(vib, true);
 
 	return 0;
 }
 #endif
 
-static SIMPLE_DEV_PM_OPS(vibrator_pm_ops, ss_vibrator_suspend, NULL);
+static SIMPLE_DEV_PM_OPS(vibrator_pm_ops, ss_vibrator_suspend, ss_vibrator_resume);
 
 static int vibrator_parse_dt(struct ss_vib *vib)
 {
@@ -355,8 +360,7 @@ static DEVICE_ATTR(vib_tuning, 0660, show_vib_tuning, store_vib_tuning);
 static ssize_t intensity_store(struct device *dev,
 		struct device_attribute *devattr, const char *buf, size_t count)
 {
-	struct timed_output_dev *t_dev = dev_get_drvdata(dev);
-	struct ss_vib *vib = container_of(t_dev, struct ss_vib, timed_dev); 
+	struct ss_vib *vib = dev_get_drvdata(dev);
 	int ret = 0, set_intensity = 0; 
 
 	ret = kstrtoint(buf, 0, &set_intensity);
@@ -375,8 +379,7 @@ static ssize_t intensity_store(struct device *dev,
 static ssize_t intensity_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	struct timed_output_dev *t_dev = dev_get_drvdata(dev);
-	struct ss_vib *vib = container_of(t_dev, struct ss_vib, timed_dev); 
+	struct ss_vib *vib = dev_get_drvdata(dev);
 
 	return sprintf(buf, "intensity: %u\n", vib->intensity);
 }

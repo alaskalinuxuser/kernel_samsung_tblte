@@ -97,43 +97,6 @@
 
 #define NUM_SEL_MNT_OPTS 5
 
-#ifdef CONFIG_TIMA_RKP_RO_CRED
-#include <asm/cp15.h>
-
-void v7_flush_kern_dcache_area(void *addr, size_t size);
-
-int tima_ro_page(unsigned long addr);
-void update_policy_violation(void);
-static inline unsigned int cmp_sec_integrity(void)
-{
-	return ((current->cred->bp_task != current)||
-			(current->mm && 
-			(!( in_interrupt() || in_softirq() )) && 
-			(current->mm->pgd != current->cred->bp_pgd)));
-			
-}
-static inline void rkp_print_debug(void)
-{
-	printk(KERN_ERR"\nRKP current = %p cred = %p bp_task = %p bp_pgd = %p mm =%p \n",current,current->cred,current->cred->bp_task,current->cred->bp_pgd,current->mm);
-	if(current->mm)
-			printk(KERN_ERR"\nRKP1 mm = %p pgd = %p bp_pgd = %p\n",current->mm,current->mm->pgd,current->cred->bp_pgd);
-
-	printk(KERN_ERR"\nRKP2 uid = %d gid = %d euid = %d  egid = %d \n",current->cred->uid,current->cred->gid,current->cred->euid,current->cred->egid);
-
-}
-/* Main function to verify cred security context of a process */
-int security_integrity_current(void)
-{
-	if (!tima_ro_page((unsigned long)current->cred)||
-		cmp_sec_integrity()) {
-		rkp_print_debug();
-		panic("RKP CRED PROTECTION VIOLATION\n");
-	}
-	return 0;
-}
-
-#endif /* CONFIG_TIMA_RKP_RO_CRED */
-
 extern struct security_operations *security_ops;
 
 /* SECMARK reference count */
@@ -467,15 +430,11 @@ static int sb_finish_set_opts(struct super_block *sb)
 	    sbsec->behavior > ARRAY_SIZE(labeling_behaviors))
 		sbsec->flags &= ~SE_SBLABELSUPP;
 
-	/* Special handling for sysfs. Is genfs but also has setxattr handler*/
-	if (strncmp(sb->s_type->name, "sysfs", sizeof("sysfs")) == 0)
-		sbsec->flags |= SE_SBLABELSUPP;
-
-	/*
-	 * Special handling for rootfs. Is genfs but supports
-	 * setting SELinux context on in-core inodes.
-	 */
-	if (strncmp(sb->s_type->name, "rootfs", sizeof("rootfs")) == 0)
+	/* Special handling. Is genfs but also has in-core setxattr handler*/
+	if (!strcmp(sb->s_type->name, "sysfs") ||
+	    !strcmp(sb->s_type->name, "pstore") ||
+	    !strcmp(sb->s_type->name, "debugfs") ||
+	    !strcmp(sb->s_type->name, "rootfs"))
 		sbsec->flags |= SE_SBLABELSUPP;
 
 	/* Initialize the root inode. */

@@ -2045,23 +2045,23 @@ static int msm_ufs_hce_enable_notify(struct ufs_hba *hba, bool status)
 	struct msm_ufs_host *host = hba->priv;
 	int err = 0;
 
-	/*switch (status) {
+	switch (status) {
 	case PRE_CHANGE:
 		msm_ufs_power_up_sequence(hba, UFS_PHY_INIT_FULL);
 		/*
 		 * The PHY PLL output is the source of tx/rx lane symbol clocks.
 		 * Hence, enable the lane clocks only after PHY is initialized.
-		 *//*
+		 */
 		err = msm_ufs_enable_lane_clks(host);
 		break;
 	case POST_CHANGE:
-		/* check if UFS PHY moved from DISABLED to HIBERN8 *//* 
+		/* check if UFS PHY moved from DISABLED to HIBERN8 */
 		err = msm_ufs_check_hibern8(hba);
 	default:
 		dev_err(hba->dev, "%s: invalid status %d\n", __func__, status);
 		err = -EINVAL;
 		break;
-	}*/
+	}
 
 	return err;
 }

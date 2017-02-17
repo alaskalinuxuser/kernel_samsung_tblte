@@ -117,6 +117,7 @@ static int max77843_haptic_probe(struct platform_device *pdev)
 	hap_data->i2c = max77843->i2c;
 	hap_data->pdata = pdata;
 	platform_set_drvdata(pdev, hap_data);
+	max77843_haptic_i2c(hap_data, true);
 
 	spin_lock_init(&(hap_data->lock));
 

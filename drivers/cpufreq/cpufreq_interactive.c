@@ -561,6 +561,8 @@ static void exit_mode(void)
 }
 #endif
 
+static int need_retry;
+
 static void cpufreq_interactive_timer(unsigned long data)
 {
 	u64 now;
@@ -720,12 +722,14 @@ static void cpufreq_interactive_timer(unsigned long data)
 		pcpu->floor_validate_time = now;
 	}
 
-	if (pcpu->target_freq == new_freq) {
+	if (pcpu->target_freq == new_freq &&
+		!(need_retry & (1 << data))) {
 		trace_cpufreq_interactive_already(
 			data, cpu_load, pcpu->target_freq,
 			pcpu->policy->cur, new_freq);
 		goto rearm_if_notmax;
 	}
+	need_retry &= (~(1 << data));
 
 	trace_cpufreq_interactive_target(data, cpu_load, pcpu->target_freq,
 					 pcpu->policy->cur, new_freq);
@@ -827,6 +831,8 @@ static int cpufreq_interactive_speedchange_task(void *data)
 	unsigned int cpu;
 	cpumask_t tmp_mask;
 	unsigned long flags;
+	int ret = 0;
+
 	struct cpufreq_interactive_cpuinfo *pcpu;
 
 	while (1) {
@@ -854,9 +860,15 @@ static int cpufreq_interactive_speedchange_task(void *data)
 			unsigned int max_freq = 0;
 
 			pcpu = &per_cpu(cpuinfo, cpu);
-			if (!down_read_trylock(&pcpu->enable_sem))
+			if (!down_read_trylock(&pcpu->enable_sem)) {
+				pr_debug("%s : cpu%d down_read_trylock fail!!\n",
+					__func__, cpu);
+				need_retry |= (1 << cpu);
 				continue;
+			}
 			if (!pcpu->governor_enabled) {
+				pr_debug("%s : cpu%d governor is not enabled!!\n",
+					__func__, cpu);
 				up_read(&pcpu->enable_sem);
 				continue;
 			}
@@ -870,9 +882,16 @@ static int cpufreq_interactive_speedchange_task(void *data)
 			}
 
 			if (max_freq != pcpu->policy->cur)
-				__cpufreq_driver_target(pcpu->policy,
+				ret = __cpufreq_driver_target(pcpu->policy,
 							max_freq,
 							CPUFREQ_RELATION_H);
+
+			if (ret) {
+				pr_debug("%s : cpu%d target fail(%d) - Target(%u), Cur(%u)!!\n",
+					__func__, cpu, ret, max_freq, pcpu->policy->cur);
+				need_retry |= (1 << cpu);
+			}
+
 			trace_cpufreq_interactive_setspeed(cpu,
 						     pcpu->target_freq,
 						     pcpu->policy->cur);
@@ -1025,7 +1044,7 @@ static ssize_t show_target_loads(
 		ret += sprintf(buf + ret, "%u%s", target_loads[i],
 			       i & 0x1 ? ":" : " ");
 #endif
-	sprintf(buf + ret - 1, "\n");
+	ret += sprintf(buf + --ret, "\n");
 	spin_unlock_irqrestore(&target_loads_lock, flags);
 	return ret;
 }
@@ -1092,7 +1111,7 @@ static ssize_t show_above_hispeed_delay(
 		ret += sprintf(buf + ret, "%u%s", above_hispeed_delay[i],
 			       i & 0x1 ? ":" : " ");
 #endif
-	sprintf(buf + ret - 1, "\n");
+	ret += sprintf(buf + --ret, "\n");
 	spin_unlock_irqrestore(&above_hispeed_delay_lock, flags);
 	return ret;
 }
@@ -1830,8 +1849,10 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			}
 
 			/* update target_freq firstly */
-			if (policy->max < pcpu->target_freq)
+			if (policy->max < pcpu->target_freq) {
 				pcpu->target_freq = policy->max;
+				need_retry |= (1 << j);
+			}
 			/*
 			 * Delete and reschedule timer.
 			 * Else the timer callback may return without
@@ -1843,10 +1864,14 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			del_timer_sync(&pcpu->cpu_slack_timer);
 
 			if (pcpu->nr_timer_resched) {
-				if (pcpu->policy->max < pcpu->target_freq)
+				if (pcpu->policy->max < pcpu->target_freq) {
 					pcpu->target_freq = pcpu->policy->max;
-				if (pcpu->policy->min >= pcpu->target_freq)
+					need_retry |= (1 << j);
+				}
+				if (pcpu->policy->min >= pcpu->target_freq) {
 					pcpu->target_freq = pcpu->policy->min;
+					need_retry |= (1 << j);
+				}
 				/*
 				 * To avoid deferring load evaluation for a
 				 * long time rearm the timer for the same jiffy
@@ -1862,6 +1887,7 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 					add_timer_on(&pcpu->cpu_slack_timer, j);
 			} else if (policy->min >= pcpu->target_freq) {
 				pcpu->target_freq = policy->min;
+				need_retry |= (1 << j);
 				/*
 				 * Reschedule timer.
 				 * The governor needs more time to evaluate

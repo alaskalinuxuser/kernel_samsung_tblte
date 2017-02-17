@@ -696,9 +696,10 @@ static void krait_update_uv(int *uv, int num, int boost_uv)
 			uv[i] = max(1150000, uv[i]);
 	};
 
-	if (enable_boost) {
-		for (i = 0; i < num; i++)
-			uv[i] += boost_uv;
+	for (i = 0; i < num; i++)
+	{
+		uv[i] += 25000;
+		uv[i] = min(uv[i], 1275000);
 	}
 }
 

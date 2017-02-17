@@ -7481,7 +7481,6 @@ struct vsp_params {
 struct dha_params {
 	int32_t enable;
 	int16_t gain[2][6];
-	int16_t device;
 } __packed ;
 
 struct lrsm_params {
@@ -7517,7 +7516,6 @@ struct asm_stream_cmd_set_pp_params_dha {
 
 	int32_t enable;
 	int16_t gain[2][6];
-	int16_t device;
 } __packed;
 
 struct asm_stream_cmd_set_pp_params_lrsm {
